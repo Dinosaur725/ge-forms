@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Great Eastern Nomination Form</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="pdf-lib.min.js"></script>
 <style>
 :root{
   --bg:#f3f5f8; --card:#ffffff; --ink:#15233b; --sub:#5b6878; --line:#d8dee7;
@@ -619,7 +619,11 @@ async function generate(){
         status.textContent = saved ? '已生成并保存 PDF。' : '已生成 PDF。';
       }catch(e){ console.warn('downloads.save failed',e); }
     }
-    if(!saved) showPreview(blob, filename, status);
+    if(!saved){
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+      status.textContent='已生成 PDF，正在下载：'+filename;
+    }
   }catch(err){
     console.error(err);
     status.className='status err'; status.textContent='生成失败：'+err.message;
