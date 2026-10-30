@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Great Eastern Nomination Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+:root{
+  --bg:#f3f5f8; --card:#ffffff; --ink:#15233b; --sub:#5b6878; --line:#d8dee7;
+  --accent:#161782; --accent2:#C51316; --danger:#C51316; --radius:10px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --card:#161d2c; --ink:#e8ecf4; --sub:#9aa7bb; --line:#2a3447;
+    --accent:#6c74e6; --accent2:#ff5b55;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --card:#161d2c; --ink:#e8ecf4; --sub:#9aa7bb; --line:#2a3447;
+  --accent:#6c74e6; --accent2:#ff5b55;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 40px;}
+header.top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:3px solid var(--accent2);padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;}
+header.top .logo{height:34px;width:auto;display:block;}
+header.top p{margin:0;font-size:12px;color:#5b6878;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:16px;}
+.card h2{margin:0 0 4px;font-size:15px;color:var(--accent2);}
+.card .hint{font-size:12px;color:var(--sub);margin:0 0 14px;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:480px){.row,.row3{grid-template-columns:1fr;}}
+label{display:block;font-size:12.5px;color:var(--sub);margin:10px 0 4px;}
+label.req::after{content:" *";color:var(--danger);}
+input[type=text],input[type=date],input[type=number],select,textarea{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+  background:transparent;color:var(--ink);font-size:14.5px;font-family:inherit;
+}
+textarea{resize:vertical;min-height:56px;}
+input[type=text],textarea{text-transform:uppercase;}
+input[type=text]::placeholder,textarea::placeholder{text-transform:none;}
+input:disabled{opacity:.45;cursor:not-allowed;background:var(--bg);}
+.choice{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;}
+.choice label{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink);margin:0;}
+.choice input{width:auto;}
+.idrow{display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;flex-wrap:wrap;gap:6px;}
+.idrow label{margin:0;}
+.idtoggle{display:flex;gap:10px;}
+.idtoggle label{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--ink);margin:0;font-weight:400;}
+.idtoggle input{width:auto;margin:0;}
+.nominee,.trustee{border:1px dashed var(--line);border-radius:8px;padding:14px;margin-top:12px;position:relative;}
+.nominee h3{margin:0 0 2px;font-size:13.5px;color:var(--ink);}
+.rm{position:absolute;right:10px;top:10px;background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;}
+.addbtn,.submit{background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:11px 16px;font-size:14px;cursor:pointer;margin-top:10px;}
+.addbtn{background:transparent;color:var(--accent2);border:1px solid var(--accent2);}
+.submit{width:100%;padding:14px;font-size:15.5px;font-weight:600;margin-top:22px;}
+.submit:disabled{opacity:.5;}
+canvas.sig{width:100%;height:120px;border:1px solid var(--line);border-radius:7px;background:#fff;touch-action:none;}
+.sigrow{display:flex;gap:8px;align-items:center;margin-top:6px;}
+.clear{font-size:12px;color:var(--sub);background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;}
+.status{margin-top:14px;font-size:13px;color:var(--sub);min-height:18px;white-space:pre-line;line-height:1.55;}
+.fmsg{font-size:12px;color:var(--danger);margin-top:4px;}
+.addbtn:disabled{opacity:.5;cursor:not-allowed;}
+.status.err{color:var(--danger);}
+.note{font-size:12px;color:var(--sub);background:var(--bg);border-radius:7px;padding:10px 12px;margin-top:14px;}
+</style>
+</head>
+<body>
+<header class="top">
+  <img class="logo" src="ge_logo.png" alt="Great Eastern">
+  <p>Appointment / Change of Nominee(s) / Trustee(s) · NBZ-FNOMI-V07-082025</p>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>保单信息</h2>
+    <p class="hint">保单号为必填，会自动印在每一页上</p>
+    <div class="row">
+      <div><label class="req">Policy No. 保单号</label><input type="text" id="policyNo" inputmode="numeric" maxlength="10" placeholder="10 位数字" oninput="digitsOnly(this)" onblur="chk10(this,true)"></div>
+      <div><label>Proposal No. 投保书编号（选填）</label><input type="text" id="proposalNo" inputmode="numeric" maxlength="10" placeholder="10 位数字" oninput="digitsOnly(this)" onblur="chk10(this,false)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>投保人 Proposer / Policyowner</h2>
+    <label class="req">全名（与 NRIC/护照一致）</label><input type="text" id="pName" oninput="chkName(this)">
+    <div class="row">
+      <div>
+        <div class="idrow"><label style="margin:0">NRIC / 护照号</label><span class="idtoggle"><label><input type="radio" name="pIdType" value="nric" checked>NRIC</label><label><input type="radio" name="pIdType" value="passport">Passport</label></span></div>
+        <input type="text" id="pNric" onblur="checkNric('pNric','pIdType','pDob','p')">
+      </div>
+      <div><label>子女数量（没有填 0）</label><input type="number" id="pChild" min="0" value="0"></div>
+    </div>
+    <div class="row">
+      <div><label class="req">出生日期（NRIC 12 位会自动带出）</label><input type="date" id="pDob" onchange="refreshAllRel()"></div>
+      <div><label class="req">性别</label><div class="choice" id="pGenderBox"><label><input type="radio" name="pGender" value="male" onchange="refreshAllRel();checkPGender()">Male</label><label><input type="radio" name="pGender" value="female" onchange="refreshAllRel();checkPGender()">Female</label></div></div>
+    </div>
+    <label>是否穆斯林 Are you a Muslim?</label>
+    <div class="choice" id="pMuslim">
+      <label><input type="radio" name="pMuslim" value="yes">Yes</label>
+      <label><input type="radio" name="pMuslim" value="no" checked>No</label>
+    </div>
+    <label>婚姻状况 Status</label>
+    <div class="choice" id="pStatus">
+      <label><input type="radio" name="pStatus" value="married" checked>Married</label>
+      <label><input type="radio" name="pStatus" value="single">Single</label>
+      <label><input type="radio" name="pStatus" value="divorced">Divorced</label>
+      <label><input type="radio" name="pStatus" value="widowed">Widowed</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>受益人 Nominee(s)</h2>
+    <p class="hint">最多 4 位；总比例必须刚好 100%；表格第 1-8 项全部必填。NRIC 填写 12 位后会自动带出出生日期和性别（末位奇数＝男、偶数＝女）</p>
+    <div id="nominees"></div>
+    <button class="addbtn" id="addBtn" onclick="addNominee()">+ 添加受益人</button>
+    <p class="hint" id="shareTotalHint" style="margin-top:10px"></p>
+  </div>
+
+  <div class="note">本次网页自动填写第 1-2 页（投保人 + 最多 4 位受益人），保单号会印在所有 5 页有内容的页面上。第一部分声明与签署、第 2 部分委任受托人、第 3 部分受益人书面同意，导出后请打印纸本手写填写与签名。</div>
+
+  <button class="submit" id="go" onclick="generate()">生成并下载已填写 PDF</button>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const ASSET_URL = "Nomination_NB.pdf";
+const MAXNOM = 4;
+const REL_LABEL={husband:'Husband',wife:'Wife',son:'Son',daughter:'Daughter',father:'Father',mother:'Mother',brother:'Brother',sister:'Sister'};
+const maleRel=['husband','son','father','brother'];
+const femaleRel=['wife','daughter','mother','sister'];
+const MIN_PARENT_GAP=15, MAX_SIB_GAP=30, MIN_SPOUSE_AGE=16;
+
+function slots(){ return [1,2,3,4].filter(i=>document.getElementById('nom'+i)); }
+function nomLabel(i){ return '受益人'+(slots().indexOf(i)+1); }
+
+function addNominee(){
+  const i=[1,2,3,4].find(k=>!document.getElementById('nom'+k));
+  if(!i) return;                                   // 已满 4 位，不能再加
+  const el = document.createElement('div');
+  el.className='nominee'; el.id='nom'+i;
+  el.innerHTML = `
+    ${i>1?`<button class="rm" onclick="removeNominee(${i})">移除</button>`:''}
+    <h3 id="n${i}Title">受益人</h3>
+    <label class="req">全名 Full Name（英文，不含数字）</label><input type="text" id="n${i}Name" oninput="chkName(this)">
+    <div class="row">
+      <div>
+        <div class="idrow"><label class="req" style="margin:0">NRIC/护照号</label><span class="idtoggle"><label><input type="radio" name="n${i}IdType" value="nric" checked onchange="togglePp(${i})">NRIC</label><label><input type="radio" name="n${i}IdType" value="passport" onchange="togglePp(${i})">Passport</label></span></div>
+        <input type="text" id="n${i}Nric" onblur="checkNric('n${i}Nric','n${i}IdType','n${i}Dob',${i})">
+      </div>
+      <div><label id="n${i}PpLbl">护照到期日</label><input type="date" id="n${i}Pp"></div>
+    </div>
+    <div class="row">
+      <div><label class="req">出生日期</label><input type="date" id="n${i}Dob" onchange="refreshRel(${i})"></div>
+      <div><label class="req">受益比例 %</label><input type="number" id="n${i}Share" step="0.01" min="0" max="100" value="${i===1?100:''}" placeholder="例如 50" oninput="updateShareTotal()"></div>
+    </div>
+    <label class="req">性别</label>
+    <div class="choice" id="n${i}GenderBox"><label><input type="radio" name="n${i}Gender" value="male" onchange="refreshRel(${i});checkNricGender(${i})">Male</label><label><input type="radio" name="n${i}Gender" value="female" onchange="refreshRel(${i});checkNricGender(${i})">Female</label></div>
+    <label class="req">国籍</label>
+    <div class="choice">
+      <label><input type="radio" name="n${i}Nat" value="malaysian" checked onclick="document.getElementById('n${i}NatOther').style.display='none'">Malaysian</label>
+      <label><input type="radio" name="n${i}Nat" value="other" onclick="document.getElementById('n${i}NatOther').style.display='block'">Others</label>
+    </div>
+    <input type="text" id="n${i}NatOther" placeholder="国籍名称（英文）" style="display:none;margin-top:6px">
+    <label class="req">与投保人关系</label>
+    <select id="n${i}Rel" onchange="document.getElementById('n${i}RelOther').style.display=this.value==='other'?'block':'none';refreshRel(${i})">
+      <option value="">请选择</option>
+      <option value="husband">Husband</option><option value="wife">Wife</option>
+      <option value="son">Son</option><option value="daughter">Daughter</option>
+      <option value="father">Father</option><option value="mother">Mother</option>
+      <option value="brother">Brother</option><option value="sister">Sister</option>
+      <option value="other">Others</option>
+    </select>
+    <div class="fmsg" id="n${i}RelMsg"></div>
+    <input type="text" id="n${i}RelOther" placeholder="请说明关系（英文）" style="display:none;margin-top:6px">
+    <label class="req">邮寄地址</label><textarea id="n${i}Addr"></textarea>
+    <div class="row3">
+      <div><label class="req">邮编</label><input type="text" id="n${i}Post"></div>
+      <div><label class="req">城市</label><input type="text" id="n${i}Town"></div>
+      <div><label class="req">国家</label><input type="text" id="n${i}Country" value="MALAYSIA"></div>
+    </div>`;
+  const box=document.getElementById('nominees');
+  const next=[...(box.children||[])].find(c=>parseInt(String(c.id).slice(3),10)>i);
+  box.insertBefore(el,next||null);
+  refreshNomineeUI(); togglePp(i);
+}
+function removeNominee(i){ const e=document.getElementById('nom'+i); if(e) e.remove(); refreshNomineeUI(); }
+function refreshNomineeUI(){
+  const s=slots();
+  s.forEach((i,k)=>{ const h=document.getElementById('n'+i+'Title'); if(h) h.textContent='受益人 '+(k+1); });
+  const btn=document.getElementById('addBtn');
+  if(btn){ btn.disabled=s.length>=MAXNOM; btn.textContent=s.length>=MAXNOM?'已达上限（最多 4 位受益人）':'+ 添加受益人'; }
+  updateShareTotal(); refreshAllRel();
+}
+// 选 NRIC 时不需要护照到期日：禁用并清空；选 Passport 才需填写
+function togglePp(i){
+  const t=document.querySelector(`input[name=n${i}IdType]:checked`);
+  const pp=document.getElementById('n'+i+'Pp'); const lbl=document.getElementById('n'+i+'PpLbl');
+  if(!pp||!t) return;
+  const isNric=t.value==='nric';
+  pp.disabled=isNric; if(isNric) pp.value='';
+  if(lbl) lbl.className=isNric?'':'req';
+  checkNric('n'+i+'Nric','n'+i+'IdType','n'+i+'Dob',i);
+}
+addNominee();
+
+// ---- validation helpers ----
+function nricInfo(digits){
+  const yy=parseInt(digits.slice(0,2),10), mm=parseInt(digits.slice(2,4),10), dd=parseInt(digits.slice(4,6),10);
+  const curYY=new Date().getFullYear()%100;
+  const year=(yy<=curYY?2000:1900)+yy;
+  const dt=new Date(year,mm-1,dd);
+  const valid = mm>=1&&mm<=12&&dd>=1&&dt.getMonth()===mm-1&&dt.getDate()===dd;
+  return {valid, iso: valid?`${year}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`:null};
+}
+function digitsOnly(el){ el.value=el.value.replace(/\D/g,'').slice(0,10); el.style.borderColor=''; }
+function chk10(el,required){
+  const v=el.value.trim();
+  el.style.borderColor = ((required||v) && !/^\d{10}$/.test(v)) ? '#C51316' : '';
+}
+function nameProblem(v){
+  v=(v||'').trim(); if(!v) return '';
+  if(/[0-9]/.test(v)) return '不能包含数字';
+  if(/[^A-Za-z\s'.\-\/@(),]/.test(v)) return "只能包含英文字母（可用 ' . - / @ 符号）";
+  return '';
+}
+function chkName(el){ el.style.borderColor = nameProblem(el.value)?'#C51316':''; }
+function genderFromNric(typeName,fieldId){
+  const t=document.querySelector(`input[name=${typeName}]:checked`);
+  const el=document.getElementById(fieldId);
+  if(!t||!el||t.value!=='nric') return null;
+  const d=el.value.replace(/\D/g,'');
+  if(d.length!==12||!nricInfo(d).valid) return null;
+  return (parseInt(d[11],10)%2===1)?'male':'female';
+}
+function nricGenderOf(i){ return genderFromNric('n'+i+'IdType','n'+i+'Nric'); }
+function setBox(id,bad){ const b=document.getElementById(id); if(b){ b.style.outline=bad?'2px solid #C51316':''; b.style.borderRadius='6px'; } }
+function checkNricGender(i){
+  const exp=nricGenderOf(i); const g=document.querySelector(`input[name=n${i}Gender]:checked`);
+  const bad=!!(exp && g && g.value!==exp); setBox('n'+i+'GenderBox',bad); return !bad;
+}
+function checkPGender(){
+  const exp=genderFromNric('pIdType','pNric'); const g=document.querySelector('input[name=pGender]:checked');
+  const bad=!!(exp && g && g.value!==exp); setBox('pGenderBox',bad); return !bad;
+}
+function checkNric(fieldId, typeName, dobId, who){
+  const input=document.getElementById(fieldId);
+  const type=document.querySelector(`input[name=${typeName}]:checked`).value;
+  const val=input.value.trim();
+  input.style.borderColor='';
+  if(type!=='nric' || !val) return;
+  const digits=val.replace(/\D/g,'');
+  if(digits.length!==12){ input.style.borderColor='#C51316'; return; }
+  const info=nricInfo(digits);
+  if(!info.valid){ input.style.borderColor='#C51316'; return; }
+  if(dobId) document.getElementById(dobId).value=info.iso;
+  if(who){
+    const exp=genderFromNric(typeName,fieldId);
+    const gname = who==='p' ? 'pGender' : 'n'+who+'Gender';
+    const r=document.querySelector(`input[name=${gname}][value=${exp}]`);
+    if(r) r.checked=true;
+    if(who==='p'){ checkPGender(); refreshAllRel(); } else { checkNricGender(who); refreshRel(who); }
+  }
+}
+function updateShareTotal(){
+  let total=0;
+  slots().forEach(i=>{ const el=document.getElementById('n'+i+'Share'); if(el) total+=parseFloat(el.value)||0; });
+  const hint=document.getElementById('shareTotalHint');
+  if(hint){
+    const ok=Math.abs(total-100)<0.001;
+    hint.textContent='当前总比例：'+total.toFixed(2)+'%'+(total>100.001?'（超过 100%，请调整）':(ok?'（✓ 已满 100%）':'（还差 '+(100-total).toFixed(2)+'%，必须刚好 100%）'));
+    hint.style.color = ok ? '' : '#C51316';
+  }
+  return total;
+}
+// ---- 关系 × 性别 × 年龄 规则 ----
+// 1) 投保人男 → 受益人不能是 Husband；投保人女 → 不能是 Wife
+// 2) 受益人性别与关系须一致（Wife/Mother/Sister/Daughter=女；Husband/Father/Brother/Son=男）
+// 3) Son/Daughter：受益人必须比投保人小至少 15 岁；Father/Mother：必须比投保人大至少 15 岁
+// 4) Husband/Wife：受益人至少 16 岁；Brother/Sister：与投保人年龄差不超过 30 岁
+function ageOf(iso){
+  const [y,m,d]=iso.split('-').map(Number); const t=new Date();
+  let a=t.getFullYear()-y; if(t<new Date(t.getFullYear(),m-1,d)) a--; return a;
+}
+function gapYears(propIso,nomIso){ // >0 ＝ 受益人比投保人年轻
+  const p=new Date(...propIso.split('-').map((v,k)=>k===1?v-1:+v)), n=new Date(...nomIso.split('-').map((v,k)=>k===1?v-1:+v));
+  return (n-p)/(365.2425*86400000);
+}
+function relProblem(i){
+  const rel=document.getElementById('n'+i+'Rel').value;
+  if(!rel||rel==='other') return '';
+  const L=REL_LABEL[rel];
+  const pg=document.querySelector('input[name=pGender]:checked');
+  const ng=document.querySelector(`input[name=n${i}Gender]:checked`);
+  if(pg){
+    if(rel==='husband'&&pg.value==='male') return '投保人是男性，受益人不能是 Husband';
+    if(rel==='wife'&&pg.value==='female') return '投保人是女性，受益人不能是 Wife';
+  }
+  if(ng){
+    if(femaleRel.includes(rel)&&ng.value==='male') return '受益人性别是 Male，关系不能是 '+L;
+    if(maleRel.includes(rel)&&ng.value==='female') return '受益人性别是 Female，关系不能是 '+L;
+  }
+  const pd=document.getElementById('pDob').value, nd=document.getElementById('n'+i+'Dob').value;
+  if(pd&&nd){
+    const gap=gapYears(pd,nd), pa=ageOf(pd), na=ageOf(nd);
+    const info='（投保人 '+pa+' 岁，受益人 '+na+' 岁）';
+    if(rel==='son'||rel==='daughter'){
+      if(gap<MIN_PARENT_GAP) return (gap<=0?'受益人不比投保人年轻，不能是 ':'年龄差不足 '+MIN_PARENT_GAP+' 岁，不能是 ')+L+info;
+    }
+    if(rel==='father'||rel==='mother'){
+      if(-gap<MIN_PARENT_GAP) return (gap>=0?'受益人不比投保人年长，不能是 ':'年龄差不足 '+MIN_PARENT_GAP+' 岁，不能是 ')+L+info;
+    }
+    if((rel==='husband'||rel==='wife') && na<MIN_SPOUSE_AGE) return '受益人未满 '+MIN_SPOUSE_AGE+' 岁，不能是 '+L+info;
+    if((rel==='brother'||rel==='sister') && Math.abs(gap)>MAX_SIB_GAP) return '年龄差超过 '+MAX_SIB_GAP+' 岁，不太可能是 '+L+info;
+  }
+  return '';
+}
+function refreshRel(i){
+  const sel=document.getElementById('n'+i+'Rel'); const msg=document.getElementById('n'+i+'RelMsg');
+  if(!sel) return true;
+  const p=relProblem(i);
+  sel.style.borderColor = p?'#C51316':'';
+  if(msg) msg.textContent = p?('⚠ '+p):'';
+  return !p;
+}
+function refreshAllRel(){ slots().forEach(i=>refreshRel(i)); }
+function checkGenderRel(i){ return refreshRel(i); }
+
+function validateAll(policyNo,proposalNo){
+  const errors=[]; let focus=null;
+  const el=id=>document.getElementById(id);
+  const clr=id=>{const e=el(id); if(e&&e.style) e.style.borderColor='';};
+  const bad=(id,msg)=>{ if(msg) errors.push(msg); const e=el(id); if(e&&e.style&&!/Box$/.test(id)) e.style.borderColor='#C51316'; if(/Box$/.test(id)) setBox(id,true); if(!focus) focus=id; };
+  ['policyNo','proposalNo','pName','pNric','pDob'].forEach(clr); setBox('pGenderBox',false);
+  const S=slots();
+  S.forEach(i=>{ ['Name','Nric','Pp','Share','Dob','NatOther','Rel','RelOther','Addr','Post','Town','Country'].forEach(k=>clr('n'+i+k)); setBox('n'+i+'GenderBox',false); });
+
+  // 保单信息
+  if(!policyNo) bad('policyNo','请先填写保单号 Policy No.（必填）');
+  else if(!/^\d{10}$/.test(policyNo)) bad('policyNo','保单号必须是 10 位数字（表格只有 10 个方格）。');
+  if(proposalNo && !/^\d{10}$/.test(proposalNo)) bad('proposalNo','Proposal No. 必须是 10 位数字（表格只有 10 个方格）。');
+
+  // 投保人
+  const todayIso=new Date().toISOString().slice(0,10);
+  const pName=el('pName').value; const pnp=nameProblem(pName);
+  if(pnp) bad('pName','投保人全名'+pnp+'。');
+  else if(!ASCII_RE.test(pName)) bad('pName','投保人全名只能使用英文字母。');
+  const pType=document.querySelector('input[name=pIdType]:checked'); const pNric=el('pNric').value.trim();
+  let pInfo=null;
+  if(pNric && !ASCII_RE.test(pNric)) bad('pNric','投保人证件号只能使用英文字母/数字。');
+  if(pType && pType.value==='nric' && pNric){
+    const d=pNric.replace(/\D/g,'');
+    if(d.length!==12||!nricInfo(d).valid) bad('pNric','投保人 NRIC 必须是有效的 12 位数字。'); else pInfo=nricInfo(d);
+  }
+  const pDob=el('pDob').value; const pG=document.querySelector('input[name=pGender]:checked');
+  if(!pDob) bad('pDob','请填写投保人出生日期（用于校验受益人的关系与年龄）。');
+  else if(pDob>todayIso) bad('pDob','投保人出生日期不能是未来的日期。');
+  else if(pInfo && pInfo.iso!==pDob) bad('pDob','投保人出生日期与 NRIC 不符（NRIC 对应 '+pInfo.iso+'）。');
+  if(!pG) bad('pGenderBox','请选择投保人性别（用于校验 Husband/Wife 关系）。');
+  else if(!checkPGender()) bad('pGenderBox','投保人性别与 NRIC 末位不符（奇数＝男，偶数＝女）。');
+
+  // 受益人（表格 1-8 项全部必填）
+  S.forEach(i=>{
+    const L=nomLabel(i); const q=k=>el('n'+i+k); const miss=[];
+    const nm=q('Name').value.trim();
+    if(!nm){ miss.push('1) 全名'); bad('n'+i+'Name'); }
+    else { const np=nameProblem(nm); if(np) bad('n'+i+'Name',L+' 全名'+np+'。'); }
+    const t=document.querySelector(`input[name=n${i}IdType]:checked`).value; const nr=q('Nric').value.trim();
+    if(!nr){ miss.push('2) NRIC/护照号'); bad('n'+i+'Nric'); }
+    else if(!ASCII_RE.test(nr)) bad('n'+i+'Nric',L+' 证件号只能使用英文字母/数字。');
+    else if(t==='nric'){
+      const d=nr.replace(/\D/g,''); const inf=d.length===12?nricInfo(d):null;
+      if(!inf||!inf.valid) bad('n'+i+'Nric',L+' 的 NRIC 必须是有效的 12 位数字。');
+      else if(q('Dob').value && q('Dob').value!==inf.iso) bad('n'+i+'Dob',L+' 出生日期与 NRIC 不符（NRIC 对应 '+inf.iso+'）。');
+    }
+    if(t==='passport' && !q('Pp').value){ miss.push('护照到期日'); bad('n'+i+'Pp'); }
+    const sh=parseFloat(q('Share').value);
+    if(!(sh>0)){ miss.push('3) 受益比例'); bad('n'+i+'Share'); }
+    else if(sh>100) bad('n'+i+'Share',L+' 受益比例不能超过 100%。');
+    const g=document.querySelector(`input[name=n${i}Gender]:checked`);
+    if(!g){ miss.push('4) 性别'); bad('n'+i+'GenderBox'); }
+    else if(!checkNricGender(i)) bad('n'+i+'GenderBox',L+' 的性别与 NRIC 末位不符（奇数＝男，偶数＝女）。');
+    const dob=q('Dob').value;
+    if(!dob){ miss.push('5) 出生日期'); bad('n'+i+'Dob'); }
+    else if(dob>todayIso) bad('n'+i+'Dob',L+' 出生日期不能是未来的日期。');
+    const nat=document.querySelector(`input[name=n${i}Nat]:checked`);
+    if(!nat) miss.push('6) 国籍');
+    else if(nat.value==='other'){
+      const v=q('NatOther').value.trim();
+      if(!v){ miss.push('6) 国籍名称'); bad('n'+i+'NatOther'); } else if(!ASCII_RE.test(v)) bad('n'+i+'NatOther',L+' 国籍名称只能使用英文。');
+    }
+    const rel=q('Rel').value;
+    if(!rel){ miss.push('7) 与投保人关系'); bad('n'+i+'Rel'); }
+    else if(rel==='other'){
+      const v=q('RelOther').value.trim();
+      if(!v){ miss.push('7) 关系说明'); bad('n'+i+'RelOther'); } else if(!ASCII_RE.test(v)) bad('n'+i+'RelOther',L+' 关系说明只能使用英文。');
+    }
+    [['Addr','8) 邮寄地址'],['Post','邮编'],['Town','城市'],['Country','国家']].forEach(([k,lab])=>{
+      const v=q(k).value.trim();
+      if(!v){ miss.push(lab); bad('n'+i+k); } else if(!ASCII_RE.test(v)) bad('n'+i+k,L+' '+lab+'只能使用英文字母/数字。');
+    });
+    if(miss.length) errors.push(L+' 缺少必填项：'+miss.join('、'));
+    const rp=relProblem(i);
+    if(rp){ bad('n'+i+'Rel',L+'：'+rp+'。'); refreshRel(i); }
+  });
+
+  // 比例总和
+  const total=updateShareTotal();
+  if(Math.abs(total-100)>0.001){
+    bad(S.length?'n'+S[0]+'Share':null,'受益人比例总和为 '+total.toFixed(2)+'%，必须刚好等于 100%（'+(total>100?'超出 ':'还差 ')+Math.abs(total-100).toFixed(2)+'%）。');
+  }
+  return {errors,focus};
+}
+
+// ---- helpers ----
+const U = s => (s||'').toUpperCase().replace(/\s+/g,' ').trim();
+const ID = s => (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function wrap(str,width,maxLines){
+  str=U(str); const lines=[]; let cur='';
+  for(const w of str.split(' ')){
+    if((cur+' '+w).trim().length>width){ lines.push(cur.trim()); cur=w; }
+    else cur=(cur+' '+w).trim();
+  }
+  if(cur) lines.push(cur);
+  return lines.slice(0,maxLines);
+}
+function dparts(dateStr){ // "YYYY-MM-DD" -> [DD,MM,YY]
+  if(!dateStr) return null;
+  const[y,m,d]=dateStr.split('-'); return [d,m,y.slice(2)];
+}
+function shareParts(v){
+  v=parseFloat(v)||0; const ip=Math.trunc(v); const dp=Math.round((v-ip)*100);
+  return [String(ip).padStart(0,' '), String(dp).padStart(2,'0')];
+}
+
+const GEO = {"stamp":[{"page":0,"prop":{"x0":140.5,"pitch":14.39,"n":10,"t":60.0,"b":75.4},"pol":{"x0":417.7,"pitch":14.39,"n":10,"t":60.0,"b":75.4}},{"page":1,"prop":{"x0":150.7,"pitch":14.39,"n":10,"t":50.7,"b":65.7},"pol":{"x0":417.0,"pitch":14.39,"n":10,"t":50.7,"b":65.7}},{"page":2,"prop":{"x0":151.3,"pitch":14.39,"n":10,"t":46.2,"b":61.3},"pol":{"x0":417.6,"pitch":14.39,"n":10,"t":46.2,"b":61.3}},{"page":3,"prop":{"x0":141.7,"pitch":14.39,"n":10,"t":44.3,"b":59.3},"pol":{"x0":416.2,"pitch":14.39,"n":10,"t":44.3,"b":59.3}},{"page":4,"prop":{"x0":141.4,"pitch":14.39,"n":10,"t":45.1,"b":60.2},"pol":{"x0":416.5,"pitch":14.39,"n":10,"t":45.1,"b":60.2}}],"prop":{"name":{"x0":168.4,"pitch":14.39,"n":27,"t":88.2,"b":102.5},"nric":{"x0":168.4,"pitch":14.37,"n":12,"t":105.6,"b":119.9},"child":{"x0":533.3,"pitch":10.55,"n":2,"t":123.5,"b":134.0}},"nom":[{"page":0,"name":{"x0":157.7,"pitch":14.39,"rows":[[577.1,591.2],[591.0,605.3],[604.7,619.0]]},"nric":{"x0":106.8,"pitch":14.39,"n":12,"t":623.6,"b":638.0},"pp":{"t":623.6,"b":638.0},"dob":{"t":642.7,"b":657.0},"date":{"x":[371.5,415.2,456.8],"pitch":14.3},"gender":{"m":106.8,"f":159.6,"top":642.7},"share":{"int":493.7,"dec":526.4,"pitch":9.3,"t":643.0,"b":652.8},"nat":{"mal":106.8,"oth":159.7,"top":661.8},"natoth":{"x0":258.2,"pitch":14.39,"n":16,"t":661.8,"b":676.1},"rel":{"xs":[106.8,157.2,196.0,233.2,284.2,328.1,373.0,419.2,461.2],"top":681.5},"relother":{"x0":504.0,"x1":561.1,"t":680.2,"b":694.1},"addr":{"x0":106.8,"pitch":13.96,"rows":[[698.4,712.7],[712.2,726.5],[726.0,740.2]]},"post":{"x0":106.8,"pitch":13.94,"n":5,"t":740.0,"b":754.3},"town":{"x0":204.5,"pitch":13.96,"n":25,"t":740.0,"b":754.3},"ctry":{"x0":106.8,"pitch":13.96,"n":10,"t":754.1,"b":768.2}},{"page":1,"name":{"x0":158.5,"pitch":14.39,"rows":[[89.4,103.7],[103.1,117.4],[117.1,131.4]]},"nric":{"x0":107.6,"pitch":14.39,"n":12,"t":144.4,"b":158.5},"pp":{"t":144.8,"b":158.8},"dob":{"t":170.9,"b":185.2},"date":{"x":[372.4,415.9,457.7],"pitch":14.3},"gender":{"m":107.5,"f":160.3,"top":170.9},"share":{"int":494.5,"dec":527.3,"pitch":9.3,"t":162.5,"b":172.4},"nat":{"mal":107.6,"oth":160.6,"top":195.7},"natoth":{"x0":259.1,"pitch":14.38,"n":16,"t":195.7,"b":210.0},"rel":{"xs":[107.5,157.9,196.8,234.0,285.0,328.9,373.8,419.9,462.0],"top":220.1},"relother":{"x0":504.7,"x1":562.0,"t":218.8,"b":232.7},"addr":{"x0":107.6,"pitch":13.96,"rows":[[244.4,258.6],[258.2,272.5],[271.9,286.2]]},"post":{"x0":107.6,"pitch":13.96,"n":5,"t":285.8,"b":300.0},"town":{"x0":205.3,"pitch":13.96,"n":25,"t":285.8,"b":300.0},"ctry":{"x0":107.6,"pitch":13.96,"n":10,"t":299.5,"b":313.7}},{"page":1,"name":{"x0":158.4,"pitch":14.39,"rows":[[337.7,352.0],[351.4,365.6],[365.2,379.4]]},"nric":{"x0":107.5,"pitch":14.39,"n":12,"t":389.8,"b":404.2},"pp":{"t":389.8,"b":404.2},"dob":{"t":413.6,"b":427.6},"date":{"x":[372.2,415.9,457.6],"pitch":14.3},"gender":{"m":107.5,"f":160.3,"top":413.4},"share":{"int":494.4,"dec":527.2,"pitch":9.3,"t":404.5,"b":414.4},"nat":{"mal":107.5,"oth":160.4,"top":437.8},"natoth":{"x0":259.0,"pitch":14.38,"n":16,"t":437.8,"b":451.9},"rel":{"xs":[107.5,157.9,196.7,233.9,284.9,328.8,373.7,419.9,461.9],"top":460.9},"relother":{"x0":504.7,"x1":561.8,"t":459.6,"b":473.5},"addr":{"x0":107.5,"pitch":13.96,"rows":[[481.0,495.1],[494.8,509.0],[508.9,523.2]]},"post":{"x0":107.5,"pitch":13.94,"n":5,"t":522.8,"b":537.1},"town":{"x0":205.2,"pitch":13.96,"n":25,"t":522.8,"b":537.1},"ctry":{"x0":107.5,"pitch":13.96,"n":10,"t":536.9,"b":551.2}},{"page":1,"name":{"x0":158.5,"pitch":14.39,"rows":[[570.0,584.3],[583.7,598.0],[597.6,611.8]]},"nric":{"x0":107.6,"pitch":14.39,"n":12,"t":620.0,"b":634.3},"pp":{"t":620.5,"b":634.4},"dob":{"t":642.8,"b":657.1},"date":{"x":[372.4,415.9,457.7],"pitch":14.3},"gender":{"m":107.5,"f":160.3,"top":642.8},"share":{"int":494.5,"dec":527.3,"pitch":9.3,"t":637.1,"b":646.9},"nat":{"mal":107.6,"oth":160.6,"top":665.4},"natoth":{"x0":259.1,"pitch":14.38,"n":16,"t":665.4,"b":679.7},"rel":{"xs":[107.5,157.9,196.8,234.0,285.0,328.9,373.8,419.9,462.0],"top":688.8},"relother":{"x0":504.7,"x1":562.0,"t":687.5,"b":701.4},"addr":{"x0":107.6,"pitch":13.96,"rows":[[710.9,725.2],[724.7,739.0],[738.6,752.9]]},"post":{"x0":107.6,"pitch":13.96,"n":5,"t":752.3,"b":766.6},"town":{"x0":205.3,"pitch":13.96,"n":25,"t":752.3,"b":766.6},"ctry":{"x0":107.6,"pitch":13.96,"n":10,"t":766.3,"b":780.5}}]};
+const REL_KEYS=['husband','wife','son','daughter','father','mother','brother','sister','other'];
+const ASCII_RE=/^[\x20-\x7E]*$/;
+
+function showPreview(blob, filename, status){
+  const url=URL.createObjectURL(blob);
+  let box=document.getElementById('pvBox');
+  if(!box){ box=document.createElement('div'); box.id='pvBox'; box.style.cssText='margin-top:14px'; status.parentNode.appendChild(box); }
+  box.innerHTML='';
+  const tip=document.createElement('p'); tip.className='hint';
+  tip.textContent='PDF 已生成。当前设备无法直接下载，请在下面的预览里用 PDF 查看器自带的保存按钮，或点“在新标签打开”后长按/右键保存。文件名：'+filename;
+  const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; a.textContent='在新标签打开 PDF'; a.style.cssText='display:inline-block;margin:6px 0 10px;color:var(--accent);font-weight:600';
+  const fr=document.createElement('iframe'); fr.src=url; fr.title='PDF preview'; fr.style.cssText='width:100%;height:70vh;border:1px solid var(--line);border-radius:8px;background:#fff';
+  box.append(tip,a,fr);
+  status.textContent='已生成 PDF（见下方预览）。';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function generate(){
+  const status=document.getElementById('status'); const go=document.getElementById('go');
+  status.className='status'; status.textContent='';
+  const fail=(msg,focusId)=>{ status.className='status err'; status.textContent=msg; if(focusId){const e=document.getElementById(focusId); if(e) e.focus();} };
+  const policyNo=document.getElementById('policyNo').value.trim();
+  const proposalNo=document.getElementById('proposalNo').value.trim();
+  const v=validateAll(policyNo,proposalNo);
+  if(v.errors.length){
+    if(v.focus){ const fe=document.getElementById(v.focus); if(fe){ if(fe.scrollIntoView) fe.scrollIntoView({block:'center'}); if(fe.focus) fe.focus(); } }
+    return fail(v.errors.map(e=>'• '+e).join('\n'));
+  }
+
+  go.disabled=true; status.textContent='正在生成 PDF…';
+  try{
+    const resp = await fetch(ASSET_URL);
+    const srcBytes = await resp.arrayBuffer();
+    const { PDFDocument, StandardFonts, rgb } = PDFLib;
+    const pdfDoc = await PDFDocument.load(srcBytes);
+    const pages = pdfDoc.getPages();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const blue = rgb(0.03,0.1,0.55);
+
+    // 一格一字
+    function cells(pi,text,x0,pitch,n,top,bottom,size=10){
+      const page=pages[pi]; const H=page.getHeight();
+      const cy = H-(top+bottom)/2-size*0.35;
+      text=(text||'').slice(0,n);
+      for(let i=0;i<text.length;i++){
+        const ch=text[i]; if(ch===' ')continue;
+        const cx = x0+i*pitch+pitch/2;
+        const w = font.widthOfTextAtSize(ch,size);
+        page.drawText(ch,{x:cx-w/2,y:cy,size,font,color:blue});
+      }
+    }
+    // 按像素宽度换行
+    function wrapPx(text,W,size){
+      const words=text.split(' ').filter(Boolean); const lines=[]; let cur='';
+      const wd=t=>font.widthOfTextAtSize(t,size);
+      for(let w of words){
+        while(wd(w)>W){ // 超长单词按字符断开
+          let k=1; while(k<w.length && wd(w.slice(0,k+1))<=W) k++;
+          if(cur){ lines.push(cur); cur=''; }
+          lines.push(w.slice(0,k)); w=w.slice(k);
+        }
+        if(!w) continue;
+        if(cur && wd(cur+' '+w)>W){ lines.push(cur); cur=w; } else cur=cur?cur+' '+w:w;
+      }
+      if(cur) lines.push(cur);
+      return lines;
+    }
+    // 超出格子数量时：直接整段贴在该栏位范围内（自动缩小字号以放入）
+    function pasteText(pi,text,xL,xR,top,bottom,maxSize=10){
+      const page=pages[pi]; const H=page.getHeight();
+      const W=xR-xL-2, Hh=bottom-top;
+      let size=maxSize, lines;
+      for(;;){
+        lines=wrapPx(text,W,size);
+        if(lines.length*size*1.1<=Hh+0.5 || size<=5) break;
+        size-=0.5;
+      }
+      const lh=size*1.1, start=top+Math.max(0,(Hh-lines.length*lh)/2);
+      lines.forEach((ln,k)=>page.drawText(ln,{x:xL+1,y:H-(start+k*lh+size*0.85),size,font,color:blue}));
+    }
+    function wrapCells(text,n){
+      const words=text.split(' ').filter(Boolean); const lines=[]; let cur='';
+      for(const w of words){
+        if(w.length>n){ if(cur) lines.push(cur); lines.push(w); cur=''; continue; }
+        if(cur && cur.length+1+w.length>n){ lines.push(cur); cur=w; } else cur=cur?cur+' '+w:w;
+      }
+      if(cur) lines.push(cur);
+      return lines;
+    }
+    // 能放进格子就逐格填；放不下就直接贴上
+    function fillGrid(pi,text,x0,pitch,n,rows){
+      text=(text||'').replace(/\s+/g,' ').trim(); if(!text) return;
+      const lines=wrapCells(text,n);
+      if(lines.length<=rows.length && lines.every(l=>l.length<=n)){
+        lines.forEach((ln,k)=>cells(pi,ln,x0,pitch,n,rows[k][0],rows[k][1]));
+      } else {
+        pasteRows(pi,text,x0,x0+n*pitch,rows,10);
+      }
+    }
+    // 超长：整段贴上，每一行落在各自的格子行中（不压格线），必要时缩小字号
+    function pasteRows(pi,text,xL,xR,rows,maxSize){
+      const page=pages[pi]; const H=page.getHeight(); const W=xR-xL-2;
+      let size=maxSize, lines=wrapPx(text,W,size);
+      while(lines.length>rows.length && size>6){ size-=0.5; lines=wrapPx(text,W,size); }
+      if(lines.length>rows.length){ pasteText(pi,text,xL,xR,rows[0][0],rows[rows.length-1][1],size); return; }
+      lines.forEach((ln,k)=>{
+        const cy=H-(rows[k][0]+rows[k][1])/2-size*0.35;
+        page.drawText(ln,{x:xL+1,y:cy,size,font,color:blue});
+      });
+    }
+    const one=g=>[[g.t,g.b]];
+    function tick(pi,x0,top,w,h){
+      const page=pages[pi]; const H=page.getHeight();
+      const pts=[[x0+0.18*w,top+0.55*h],[x0+0.42*w,top+0.82*h],[x0+0.84*w,top+0.18*h]];
+      for(let i=0;i<2;i++) page.drawLine({start:{x:pts[i][0],y:H-pts[i][1]},end:{x:pts[i+1][0],y:H-pts[i+1][1]},thickness:1.4,color:blue});
+    }
+    function dateAt(pi,dateStr,dg,row){
+      const p=dparts(dateStr); if(!p) return;
+      p.forEach((v,k)=>cells(pi,v,dg.x[k],dg.pitch,2,row.t,row.b));
+    }
+
+    // ---- Policy / Proposal No.（每页 10 格）----
+    GEO.stamp.forEach(sp=>{
+      cells(sp.page,policyNo,sp.pol.x0,sp.pol.pitch,10,sp.pol.t,sp.pol.b);
+      if(proposalNo) cells(sp.page,proposalNo,sp.prop.x0,sp.prop.pitch,10,sp.prop.t,sp.prop.b);
+    });
+
+    // ---- 投保人（第 1 页）----
+    const P=GEO.prop;
+    fillGrid(0,U(document.getElementById('pName').value),P.name.x0,P.name.pitch,P.name.n,one(P.name));
+    fillGrid(0,ID(document.getElementById('pNric').value),P.nric.x0,P.nric.pitch,P.nric.n,one(P.nric));
+    const muslim=document.querySelector('input[name=pMuslim]:checked').value;
+    tick(0, muslim==='yes'?488.4:448.7, 108.5, 8.5,8.5);
+    const statusMap={married:73.0,single:120.8,divorced:164.4,widowed:216.2};
+    tick(0, statusMap[document.querySelector('input[name=pStatus]:checked').value],124.3,7.1,7.1);
+    const childNum=parseInt(document.getElementById('pChild').value||'0',10);
+    if(childNum===0) tick(0,396.2,124.1,8.5,8.5);
+    else { tick(0,436.0,124.1,8.5,8.5); fillGrid(0,String(childNum).padStart(2,'0'),P.child.x0,P.child.pitch,2,one(P.child)); }
+
+    // ---- 受益人 ----
+    function fillNominee(g,i){
+      const q=k=>document.getElementById('n'+i+k); const pi=g.page;
+      const nm=U(q('Name').value); if(!nm) return;
+      fillGrid(pi,nm,g.name.x0,g.name.pitch,28,g.name.rows);
+      fillGrid(pi,ID(q('Nric').value),g.nric.x0,g.nric.pitch,12,one(g.nric));
+      dateAt(pi,q('Pp').value,g.date,g.pp);
+      dateAt(pi,q('Dob').value,g.date,g.dob);
+      const gender=document.querySelector(`input[name=n${i}Gender]:checked`);
+      if(gender) tick(pi, gender.value==='male'?g.gender.m:g.gender.f, g.gender.top, 14.3,14.3);
+      const sv=parseFloat(q('Share').value)||0; const ip=Math.trunc(sv); const dp=Math.round((sv-ip)*100);
+      cells(pi,String(ip).padStart(3,' '),g.share.int,g.share.pitch,3,g.share.t,g.share.b,8);
+      cells(pi,String(dp).padStart(2,'0'),g.share.dec,g.share.pitch,2,g.share.t,g.share.b,8);
+      const nat=document.querySelector(`input[name=n${i}Nat]:checked`).value;
+      tick(pi, nat==='malaysian'?g.nat.mal:g.nat.oth, g.nat.top, 14.3,14.2);
+      if(nat==='other') fillGrid(pi,U(q('NatOther').value),g.natoth.x0,g.natoth.pitch,16,one(g.natoth));
+      const rel=q('Rel').value;
+      tick(pi,g.rel.xs[REL_KEYS.indexOf(rel)],g.rel.top,11.4,11.4);
+      if(rel==='other'){ const t=U(q('RelOther').value); if(t) pasteText(pi,t,g.relother.x0+2,g.relother.x1,g.relother.t,g.relother.b,9); }
+      fillGrid(pi,U(q('Addr').value),g.addr.x0,g.addr.pitch,32,g.addr.rows);
+      fillGrid(pi,ID(q('Post').value),g.post.x0,g.post.pitch,5,one(g.post));
+      fillGrid(pi,U(q('Town').value),g.town.x0,g.town.pitch,25,one(g.town));
+      fillGrid(pi,U(q('Country').value),g.ctry.x0,g.ctry.pitch,10,one(g.ctry));
+    }
+    slots().forEach((i,k)=>fillNominee(GEO.nom[k],i));
+
+    const outBytes = await pdfDoc.save();
+    const blob = new Blob([outBytes],{type:'application/pdf'});
+    const holder=U(document.getElementById('pName').value).replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+    const filename = holder ? `Nomination_${holder}_${policyNo}.pdf` : `Nomination_${policyNo}.pdf`;
+    const downloads = await (window.claude ? claude.use('downloads') : Promise.resolve(null));
+    let saved=false;
+    if(downloads){
+      try{
+        const r = await downloads.save({filename, data: blob});
+        saved = r.status==='saved';
+        status.textContent = saved ? '已生成并保存 PDF。' : '已生成 PDF。';
+      }catch(e){ console.warn('downloads.save failed',e); }
+    }
+    if(!saved) showPreview(blob, filename, status);
+  }catch(err){
+    console.error(err);
+    status.className='status err'; status.textContent='生成失败：'+err.message;
+  }finally{
+    go.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
